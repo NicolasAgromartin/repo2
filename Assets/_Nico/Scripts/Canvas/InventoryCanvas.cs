@@ -8,26 +8,19 @@ using TMPro;
 
 public class InventoryCanvas : MonoBehaviour
 {
-    [Header("GameObjects")]
-    [SerializeField] private GameObject inventoryPanel;
+    [Header("Prefabs")]
     [SerializeField] private GameObject itemIndicatorPrefab;
     [SerializeField] private TMP_Text potionsCounter;
 
+    [SerializeField] private GameObject inventoryPanel;
+
     private Dictionary<ItemType, GameObject> itemsIndicator = new();
-
     private Inventory inventory;
-    
 
 
 
 
 
-    #region Life Cykle
-    private void OnDisable()
-    {
-        //inventory.OnItemListChanged -= UpdateInventory;
-    }
-    #endregion
 
 
 
@@ -52,8 +45,6 @@ public class InventoryCanvas : MonoBehaviour
     private void UpdateInventory(ItemType itemType)
     {
         itemsIndicator[itemType].transform.Find("ItemCount").GetComponent<TMP_Text>().text = inventory.GetItems(itemType).Count.ToString();
-
-        //Debug.Log($"there's {inventory.GetItems(itemType).Count.ToString()} items of the type {itemType}");
 
         IncreasePotionsCounter(inventory.GetItems(ItemType.Potion).Count);
     }

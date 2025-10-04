@@ -15,14 +15,19 @@ public class NecromancyScreen : MonoBehaviour
 
     [Header("Panels")]
     [SerializeField] private GameObject invocationPanel;
-    [SerializeField] private GameObject inventoryPanel;
 
     [Header("Prefabs")]
-    [SerializeField] private GameObject summonBoxPrefab;
+    [SerializeField] private GameObject invocationBoxPrefab;
 
-    [SerializeField] private Necromancy necromancy;
+    private Necromancy necromancy;
 
 
+    private void Awake()
+    {
+        necromancy = FindAnyObjectByType<Player>().GetComponent<Necromancy>();
+
+        invocationPanel = transform.Find("InvocationPanel").gameObject;
+    }
 
     public void OpenMenu(Remains remains)
     {
@@ -62,7 +67,7 @@ public class NecromancyScreen : MonoBehaviour
 
         foreach (SummonName summon in possibleSummons)
         {
-            GameObject ritual = Instantiate(summonBoxPrefab, invocationPanel.transform);
+            GameObject ritual = Instantiate(invocationBoxPrefab, invocationPanel.transform);
             ritual.GetComponentInChildren<TMP_Text>().text = summon.ToString();
             ritual.GetComponent<Button>().onClick.AddListener(() => necromancy.Summon(summon, remains)); 
             ritual.GetComponent<Button>().onClick.AddListener(() => CloseMenu());
