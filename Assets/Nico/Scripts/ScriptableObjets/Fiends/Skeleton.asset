@@ -16,10 +16,10 @@ MonoBehaviour:
   fiendName: Basic Skeleton
   type: 0
   stats:
-    Health: 60
+    MaxHealth: 120
+    CurrentHealth: 0
     Attack: 20
-    MaxMovementSpeed: 4
-    AttackRange: 2
+    MovementSpeed: 0
   baseOffset: 0
   speed: 3
   angularSpeed: 0

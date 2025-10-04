@@ -65,7 +65,7 @@ public class PlayerMinion : Fiend
     {
         base.GetModelMaterials();
         Stats.Attack /= 2;
-        Stats.Health /= 2;
+        Stats.MaxHealth /= 2;
     }
 
 
@@ -215,7 +215,7 @@ public class PlayerMinion : Fiend
     {
         base.RecieveDamage(damage);
 
-        if(Stats.Health <= 0)
+        if(Stats.CurrentHealth <= 0)
         {
             Destroy(this.gameObject);
         }

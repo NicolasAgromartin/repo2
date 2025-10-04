@@ -4,25 +4,26 @@
 [System.Serializable]
 public class Stats
 {
-    public int Health;
+    public int MaxHealth;
+    public int CurrentHealth;
     public int Attack;
-    public float MaxMovementSpeed;
-    public float AttackRange;
+    public float MovementSpeed;
+
 
     public Stats(int health, int attack, float maxMovementSpeed, float attackRange)
     {
-        Health = health;
+        MaxHealth = health;
+        CurrentHealth = MaxHealth;
         Attack = attack;
-        MaxMovementSpeed = maxMovementSpeed;
-        AttackRange = attackRange;
+        MovementSpeed = maxMovementSpeed;
     }
 
     public Stats(Stats stats)
     {
-        Health = stats.Health;
+        MaxHealth = stats.MaxHealth;
+        CurrentHealth = MaxHealth;
         Attack = stats.Attack;
-        MaxMovementSpeed = stats.MaxMovementSpeed;
-        AttackRange = stats.AttackRange;
+        MovementSpeed = stats.MovementSpeed;
     }
 }
 

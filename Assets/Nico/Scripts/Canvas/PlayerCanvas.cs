@@ -109,11 +109,11 @@ public class PlayerCanvas : MonoBehaviour
         minion.OnDeath -= RemoveMinionFromList;
     }
 
-    private void UpdateMinionHealth(GameObject minion, int newHealth)
+    private void UpdateMinionHealth(Unit minion, int newHealth)
     {
         StartCoroutine(ChangeHealthBar(playerMinionBoxes[minion.GetComponent<PlayerMinion>()].transform.Find("Health/HealthBar").GetComponent<Image>(), newHealth));
     }
-    private void RemoveMinionFromList(GameObject minion)
+    private void RemoveMinionFromList(Unit minion)
     {
         PlayerMinion deadMinion = minion.GetComponent<PlayerMinion>();
 

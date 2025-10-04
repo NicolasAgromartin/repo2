@@ -29,7 +29,7 @@ public class Enemy : Fiend
     {
         base.Awake();
         behaviorAgent = GetComponent<BehaviorGraphAgent>();
-        maxHealth = Stats.Health;
+        maxHealth = Stats.CurrentHealth;
         name = data.name;
     }
     private void Start()
@@ -67,10 +67,10 @@ public class Enemy : Fiend
         base.RecieveDamage(damage);
         OnDamageRecievd?.Invoke();
 
-        healthBar.fillAmount = (float)Stats.Health / maxHealth;
+        healthBar.fillAmount = (float)Stats.CurrentHealth / maxHealth;
 
 
-        if (Stats.Health <= 0)
+        if (Stats.CurrentHealth <= 0)
         {
             if (!isFinalBoos) MakeRemains();
             else

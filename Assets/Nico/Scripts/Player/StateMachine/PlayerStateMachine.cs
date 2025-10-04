@@ -196,7 +196,7 @@ public class PlayerStateMachine : BaseStateMachine
     }
     private void UsePotion()
     {
-        if(player.GetCurrentHealth() == 100) { Debug.Log("Max health! "); return; }
+        if(player.Stats.CurrentHealth == 100) { Debug.Log("Max health! "); return; }
 
         if (CurrentState == deadState || CurrentState == interactState) return;
 

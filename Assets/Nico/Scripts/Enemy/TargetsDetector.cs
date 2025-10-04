@@ -66,9 +66,9 @@ public class TargetsDetector : MonoBehaviour
         }
     }
 
-    private void RemoveMissingTarget(GameObject target)
+    private void RemoveMissingTarget(Unit target)
     {
-        targetsList.Remove(target);
+        targetsList.Remove(target.gameObject);
         OnTargetsUpdated?.Invoke(SelectTarget());
     }
 

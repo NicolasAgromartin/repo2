@@ -37,7 +37,7 @@ public class Player : Unit
     }
     private void Start()
     {
-        OnHealthChanged?.Invoke(Stats.Health);
+        OnHealthChanged?.Invoke(Stats.CurrentHealth);
         OnLivesChanged?.Invoke(lives);
         UpdateMinionsList();
     }
@@ -68,9 +68,9 @@ public class Player : Unit
         base.RecieveDamage(damage);
 
         OnDamageRecieved?.Invoke();
-        OnHealthChanged?.Invoke(Stats.Health);
+        OnHealthChanged?.Invoke(Stats.CurrentHealth);
 
-        if (Stats.Health <= 0)
+        if (Stats.CurrentHealth <= 0)
         {
             tag = "Untagged";
             lives--;
@@ -90,13 +90,13 @@ public class Player : Unit
     override public void IncreaseHealth(int health)
     {
         base.IncreaseHealth(health);
-        OnHealthChanged?.Invoke(Stats.Health);
+        OnHealthChanged?.Invoke(Stats.CurrentHealth);
     }
 
     private void RestorePlayer()
     {
         tag = "Player";
-        Stats.Health = 0;
+        Stats.CurrentHealth = 0;
         IncreaseHealth(80);
     }
     #endregion

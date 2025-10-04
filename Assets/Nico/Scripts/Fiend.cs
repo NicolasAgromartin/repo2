@@ -9,11 +9,6 @@ using UnityEngine.AI;
 
 public class Fiend : Unit
 {
-    #region Events
-    public event Action<GameObject, int> OnDamageRecieved;
-    public event Action<GameObject> OnDeath;
-    #endregion
-
     [Header("Fiend ScriptableObject")]
     [SerializeField] protected FiendSO data;
 
@@ -99,14 +94,10 @@ public class Fiend : Unit
     {
         base.RecieveDamage(damage);
 
-        OnDamageRecieved?.Invoke(this.gameObject, Stats.Health);
-
         StartCoroutine(Damaged());
 
-        if (Stats.Health <= 0)
+        if (Stats.CurrentHealth <= 0)
         {
-            OnDeath?.Invoke(this.gameObject);
-
             foreach (Material material in materials) material.SetColor("_BaseColor", Color.black);
         }
     }

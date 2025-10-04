@@ -25,7 +25,7 @@ public class EnemyDetector : MonoBehaviour
         // si el gameObject no tiene el tag enemigo o si ya esta en la lista
 
         enemiesNearby.Add(root);
-        root.GetComponent<Enemy>().OnDeath += RemoveFromList;
+        root.GetComponent<Unit>().OnDeath += RemoveFromList;
     }
     private void OnTriggerExit(Collider other)
     {
@@ -34,7 +34,7 @@ public class EnemyDetector : MonoBehaviour
         if (!root.CompareTag("Enemy") || !enemiesNearby.Contains(root)) return;
 
         enemiesNearby.Remove(root);
-        root.GetComponent<Enemy>().OnDeath -= RemoveFromList;
+        root.GetComponent<Unit>().OnDeath -= RemoveFromList;
 
         if (TacticsSystem.SelectedEnemy == root.gameObject) TacticsSystem.UnselectEnemy();
     }
@@ -62,7 +62,7 @@ public class EnemyDetector : MonoBehaviour
 
 
 
-    private void RemoveFromList(GameObject enemy)
+    private void RemoveFromList(Unit enemy)
     {
         enemy.GetComponent<Enemy>().OnDeath -= RemoveFromList;
         enemiesNearby.Remove(enemy.gameObject);
