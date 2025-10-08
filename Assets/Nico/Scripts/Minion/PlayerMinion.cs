@@ -14,11 +14,11 @@ public class PlayerMinion : Fiend
     private readonly float maxRange = 20f;
     private readonly float timeReaction = 1f;
 
-    private bool suscribedToTacicts;
 
 
 
-    #region Life Cykle
+
+
     new private void Awake()
     {
         if (data != null) base.Awake();
@@ -33,25 +33,6 @@ public class PlayerMinion : Fiend
         player = FindAnyObjectByType<Player>().gameObject;
 
     }
-    private void OnEnable()
-    {
-        TacticsSystem.OnQuickReturn += ReturnToPlayer;
-        TacticsSystem.OnSwarmOrder += AttackTarget;
-
-        TacticsSystem.OnPlayerMinionSelected += SuscribeToTactics; // se suscriben al tactics sistem para suscribirse a sus eventos cuando se los selecciona
-        TacticsSystem.OnMinionUnselected += UnsuscribeToTactics;
-    }
-    private void OnDisable()
-    {
-        UnsuscribeToTactics();
-
-        TacticsSystem.OnQuickReturn -= ReturnToPlayer;
-        TacticsSystem.OnSwarmOrder -= AttackTarget;
-
-        TacticsSystem.OnPlayerMinionSelected -= SuscribeToTactics;
-        TacticsSystem.OnMinionUnselected -= UnsuscribeToTactics;
-    }
-    #endregion
 
 
 
@@ -71,58 +52,24 @@ public class PlayerMinion : Fiend
 
 
 
-    #region Tactics System
-    private void SuscribeToTactics(GameObject minionSelected)
-    {
-        // el input manager detecta todos los colliders el prefab y te lleva al root de todos
-        // que es donde esta el tag PlayerMinion y este script
-
-        if (minionSelected != this.gameObject)
-        {
-            UnsuscribeToTactics();
-            return;
-        }
-        suscribedToTacicts = true;
-        TacticsSystem.OnReturnOrder += ReturnToPlayer;
-        TacticsSystem.OnMoveToPositionOrder += MoveToPosition;
-        TacticsSystem.OnTargetChangeOrder += AttackTarget;
-    }
-    private void UnsuscribeToTactics()
-    {
-        suscribedToTacicts = false;
-        TacticsSystem.OnReturnOrder -= ReturnToPlayer;
-        TacticsSystem.OnMoveToPositionOrder -= MoveToPosition;
-        TacticsSystem.OnTargetChangeOrder -= AttackTarget;
-    }
-    #endregion
 
 
 
 
-
-
-
-    #region Tactic Actions
-    private void ReturnToPlayer()
+    public void ReturnToPlayer()
     {
         StopAllCoroutines();
         StartCoroutine(FollowTarget(player));
-
-        if (suscribedToTacicts) UnsuscribeToTactics();
     }
-    private void AttackTarget(GameObject target)
+    public void AttackTarget(GameObject target)
     {
         StopAllCoroutines();
         StartCoroutine(FollowTarget(target));
-
-        if (suscribedToTacicts) UnsuscribeToTactics();
     }
-    private void MoveToPosition(Vector3 position)
+    public void MoveToPosition(Vector3 position)
     {
         StopAllCoroutines();
         agent.SetDestination(position);
-
-        if (suscribedToTacicts) UnsuscribeToTactics();
     }
 
 
@@ -181,29 +128,6 @@ public class PlayerMinion : Fiend
             yield return new WaitForSeconds(data.timeBetweenAttacks);
         }
     }
-    //private IEnumerator PerformAttack(GameObject target)
-    //{
-    //    Debug.Log($"{gameObject.name} is attacking {target.name}");
-
-    //    while (target != null && Vector3.Distance(transform.position, target.transform.position) <= data.attackRange)
-    //    {
-    //        // Rotar hacia el objetivo
-    //        Vector3 direction = (target.transform.position - transform.position).normalized;
-    //        direction.y = 0; // evitar inclinarse hacia arriba/abajo
-    //        if (direction != Vector3.zero)
-    //        {
-    //            Quaternion lookRotation = Quaternion.LookRotation(direction);
-    //            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 10f);
-    //        }
-
-    //        // Ejecutar ataque
-    //        yield return StartCoroutine(attackPerformer.PerformAttack(attackWindowTime));
-    //        yield return new WaitForSeconds(data.timeBetweenAttacks);
-    //    }
-    //}
-    #endregion
-
-
 
 
 

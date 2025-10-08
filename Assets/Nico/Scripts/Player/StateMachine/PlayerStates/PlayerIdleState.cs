@@ -1,38 +1,23 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerIdleState : BaseState
 {
     public override event Action<TransitionEvent> OnEventOccurred;
 
-    public PlayerIdleState(PlayerStateMachine stateMachine) : base(stateMachine)
-    {
-        this.stateMachine = stateMachine;
-    }
+    public PlayerIdleState(PlayerStateMachine stateMachine) : base(stateMachine) { }
 
-    #region Components
-    private Animator animator;
-    private PlayerStateMachine stateMachine;
-    private EnemyDetector enemyDetector;
-    private AudioSource stepsClip;
-    #endregion
+
 
 
     #region Life Cykle
     public override void EnterState()
     {
-        animator = stateMachine.Animator;
-        enemyDetector = stateMachine.EnemyDetector;
-        stepsClip = stateMachine.StepsClip;
-
         InputManager.OnPlayerMovement += MovePlayer;
         InputManager.OnInteractAction += Interact;
         InputManager.OnBasicAttackPerformed += Attack;
         InputManager.OnTacticalButtonPressed += EnterTacticalMode;
-        InputManager.OnSwitchTargetButtonPressed += enemyDetector.ChangeFocusedTarget;
-        InputManager.OnReturnAllMinonsButtonPressed += TacticsSystem.ReturnAllMinions;
-
-        stepsClip.Stop();
     }
     public override void ExitState()
     {
@@ -40,11 +25,19 @@ public class PlayerIdleState : BaseState
         InputManager.OnInteractAction -= Interact;
         InputManager.OnBasicAttackPerformed -= Attack;
         InputManager.OnTacticalButtonPressed -= EnterTacticalMode;
-        InputManager.OnSwitchTargetButtonPressed -= enemyDetector.ChangeFocusedTarget;
-        InputManager.OnReturnAllMinonsButtonPressed -= TacticsSystem.ReturnAllMinions;
     }
     public override void UpdateState() 
     {
+        ApplyGravity();
+    }
+    public override void OnTriggerEnter(Collider other)
+    {
+        GameObject parent = other.transform.root.gameObject;
+
+        if (other.CompareTag("DamageDealer"))
+        {
+            if(parent.CompareTag("Enemy")) OnEventOccurred?.Invoke(TransitionEvent.RecieveDamage);
+        }
     }
     #endregion
 
@@ -55,43 +48,25 @@ public class PlayerIdleState : BaseState
     {
         animator.SetFloat("Movement", new Vector3(direction.x, 0, direction.y).magnitude, .2f, Time.deltaTime);
 
-        if(direction.x != 0 || direction.y != 0)
+        if (direction.x != 0 || direction.y != 0)
         {
             OnEventOccurred?.Invoke(TransitionEvent.Move);
         }   
     }
     private void Interact()
     {
-        Collider[] colliders = Physics.OverlapSphere(stateMachine.transform.position, 1f, LayerMask.GetMask("Interactable"));
-
-
-        Debug.Log(colliders.Length);
-        // unicamente cuando es una interaccion de necromancia cambio de estado, si no unicamente tomo el objeto
-        //Debug.Log(colliders.Length);
+        Collider[] colliders = Physics.OverlapSphere(transform.position, 1f, LayerMask.GetMask("Interactable"));
 
         foreach (Collider collider in colliders)
         {
-            GameObject obj = collider.transform.root.gameObject;
-            Debug.Log(collider.gameObject.name);
+            GameObject detected = collider.transform.root.gameObject;
 
-            if (obj.GetComponent<IInteractable>() != null)
+            if (detected.GetComponent<IInteractable>() == null) return;
+
+            if (detected.CompareTag("Remains")) OnEventOccurred?.Invoke(TransitionEvent.Interact);
+            else
             {
-
-                if(obj.CompareTag("Remains")) OnEventOccurred?.Invoke(TransitionEvent.Interact);
-                else 
-                {
-                    obj.GetComponent<IInteractable>().Interact(stateMachine.gameObject);
-                }
-            }
-
-            if(collider.gameObject.GetComponent<IInteractable>() != null)
-            {
-                if (collider.gameObject.CompareTag("Gate"))
-                {
-                    Debug.Log("Gate detected");
-                }
-
-                collider.gameObject.GetComponent<IInteractable>().Interact(stateMachine.gameObject);
+                detected.GetComponent<IInteractable>().Interact(transform.gameObject);
             }
         }
     }
@@ -100,10 +75,19 @@ public class PlayerIdleState : BaseState
 
 
 
-    #region Collisions && Triggers
-    public override void OnCollisionEnter(Collider other) { }
-    public override void OnCollisionExit(Collider other) { }
-    public override void OnTriggerEnter(Collider other) { }
-    public override void OnTriggerExit(Collider other) { }
-    #endregion
+    private float velocity;
+    private readonly float defaultGravity = -9.807f;
+    private readonly float gravityMultiplier = 3f;
+    private void ApplyGravity()
+    {
+        if (characterController.isGrounded)
+        {
+            velocity = -1f;
+        }
+        else
+        {
+            velocity += defaultGravity * gravityMultiplier * Time.deltaTime;
+            characterController.Move(Vector3.up * velocity * Time.deltaTime);
+        }
+    }
 }

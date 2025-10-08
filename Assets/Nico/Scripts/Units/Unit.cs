@@ -3,7 +3,7 @@ using UnityEngine;
 
 public abstract class Unit : MonoBehaviour
 {
-    public event Action<Unit> OnDeath;
+    public virtual event Action<Unit> OnDeath;
     public event Action<Unit, int> OnDamageRecieved;
     public event Action<Unit, int> OnHealthIncreased;
 
@@ -14,13 +14,16 @@ public abstract class Unit : MonoBehaviour
     {
         Stats.CurrentHealth -= damage;
 
+        if(Stats.CurrentHealth < 0) Stats.CurrentHealth = 0;
+
+        OnDamageRecieved?.Invoke(this, Stats.CurrentHealth);
+
         if(Stats.CurrentHealth <= 0)
         {
             OnDeath?.Invoke(this);
             return;
         }
 
-        OnDamageRecieved?.Invoke(this, Stats.CurrentHealth);
     }
     public virtual void IncreaseHealth(int amount)
     {

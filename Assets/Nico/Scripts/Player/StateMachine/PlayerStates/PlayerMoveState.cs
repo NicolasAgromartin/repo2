@@ -7,34 +7,16 @@ public class PlayerMovementState : BaseState
 {
     public override event Action<TransitionEvent> OnEventOccurred;
 
-    public PlayerMovementState(PlayerStateMachine stateMachine) : base(stateMachine)
-    {
-        this.stateMachine = stateMachine;
-    }
-
-    #region Components
-    private PlayerStateMachine stateMachine;
-    private CharacterController characterController;
-    private CameraController cameraController;
-    private EnemyDetector enemyDetector;
-    private AudioSource stepsClip;
-    private Transform characterModel;
-    private Animator animator;
-    #endregion
+    public PlayerMovementState(PlayerStateMachine stateMachine) : base(stateMachine) { }
 
 
-    private readonly float defaultGravity = -9.807f;
-    private readonly float gravityMultiplier = 3f;
     private readonly float modelRotationSpeed = 500f;
     private readonly float moveSpeed = 5f;
 
     private Quaternion modelRotation;
-
     private Vector3 moveDirection;
-    private Vector3 moveInput;
     private Vector3 playerVelocity;
-    private float moveAmount;
-    private float velocity;
+
 
 
 
@@ -44,61 +26,49 @@ public class PlayerMovementState : BaseState
     #region Life Cykle
     public override void EnterState()
     {
-        characterController = stateMachine.CharacterController;
-        cameraController = stateMachine.CameraController;
-        characterModel = stateMachine.CharacterModel;
-        animator = stateMachine.Animator;
-        enemyDetector = stateMachine.EnemyDetector;
-        stepsClip = stateMachine.StepsClip;
-
-        InputManager.OnPlayerMovement += MovePlayer;
-        InputManager.OnSwitchTargetButtonPressed += enemyDetector.ChangeFocusedTarget;
-        InputManager.OnReturnAllMinonsButtonPressed += TacticsSystem.ReturnAllMinions;
+        InputManager.OnPlayerMovement += SimpleMove;
+        InputManager.OnBasicAttackPerformed += Attack;
     }
     public override void ExitState()
     {
-        InputManager.OnPlayerMovement -= MovePlayer;
-        InputManager.OnSwitchTargetButtonPressed -= enemyDetector.ChangeFocusedTarget;
-        InputManager.OnReturnAllMinonsButtonPressed -= TacticsSystem.ReturnAllMinions;
+        InputManager.OnPlayerMovement -= SimpleMove;
+        InputManager.OnBasicAttackPerformed -= Attack;
     }
     public override void UpdateState() 
     {
         ApplyGravity();
-        ApplyRotation();
-        ApplyMovement();
-        
-        if (moveAmount > 0) // si el jugador se está moviendo
-        {
-            if (!stepsClip.isPlaying) // solo arranca si no está ya sonando
-                stepsClip.Play();
-        }
-        else // si no hay movimiento
-        {
-            if (stepsClip.isPlaying)
-                stepsClip.Stop();
-        }
-
     }
     #endregion
 
 
 
-    private void MovePlayer(Vector2 direction)
+
+    private void SimpleMove(Vector2 inputDirection)
     {
-        animator.SetFloat("Movement", new Vector3(direction.x, 0, direction.y).magnitude, .2f, Time.deltaTime);
+        animator.SetFloat("Movement", new Vector3(inputDirection.x, 0f, inputDirection.y).magnitude, .2f, Time.deltaTime);
 
-        if (direction.x == 0 && direction.y == 0) OnEventOccurred?.Invoke(TransitionEvent.End);
+        if (inputDirection.x == 0 && inputDirection.y == 0) OnEventOccurred?.Invoke(TransitionEvent.End);
 
-        moveInput = new Vector3(direction.x, 0f, direction.y).normalized;
-        moveAmount = Mathf.Clamp01(Mathf.Abs(direction.x) + Mathf.Abs(direction.y));
-        moveDirection = cameraController.PlanarRotation() * moveInput;
+        moveDirection = new Vector3(inputDirection.x, 0f, inputDirection.y).normalized;
+        
+        playerVelocity = CinemachineController.PlanarRotation * moveDirection * moveSpeed;
 
-        playerVelocity = moveDirection * moveSpeed;
-    }
-    private void ApplyMovement()
-    {
+
+        if (Mathf.Clamp01(Mathf.Abs(inputDirection.x) + Mathf.Abs(inputDirection.y)) > 0)
+        {
+            modelRotation = Quaternion.LookRotation(playerVelocity);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, modelRotation, modelRotationSpeed * Time.deltaTime);
+        }
+
+
+        playerVelocity.y = velocity;
         characterController.Move(Time.deltaTime * playerVelocity);
     }
+
+
+    private float velocity;
+    private readonly float defaultGravity = -9.807f;
+    private readonly float gravityMultiplier = 3f;
     private void ApplyGravity()
     {
         if (characterController.isGrounded)
@@ -109,24 +79,13 @@ public class PlayerMovementState : BaseState
         {
             velocity += defaultGravity * gravityMultiplier * Time.deltaTime;
         }
-
-        playerVelocity.y = velocity;
     }
-    private void ApplyRotation()
+
+
+    private void Attack()
     {
-        if (moveAmount > 0)
-        {
-            modelRotation = Quaternion.LookRotation(moveDirection);
-            characterModel.rotation = Quaternion.RotateTowards(characterModel.transform.rotation, modelRotation, modelRotationSpeed * Time.deltaTime);
-        }
+        OnEventOccurred?.Invoke(TransitionEvent.Attack);
     }
 
 
-
-    #region Physics
-    public override void OnCollisionEnter(Collider other) { }
-    public override void OnCollisionExit(Collider other) { }
-    public override void OnTriggerEnter(Collider other) { }
-    public override void OnTriggerExit(Collider other) { }
-    #endregion
 }

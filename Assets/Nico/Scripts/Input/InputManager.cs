@@ -54,6 +54,7 @@ public class InputManager : MonoBehaviour
     #region Life Cykle
     private void Awake()
     {
+        CursorManager.DisableCursor();
         playerInput = GetComponent<PlayerInput>();
 
         moveAction = playerInput.actions.FindAction("Move");
@@ -137,7 +138,6 @@ public class InputManager : MonoBehaviour
             }
             if (hit.collider.transform.root.gameObject.CompareTag("PlayerMinion"))
             {
-                Debug.Log(hit.collider.gameObject);
                 OnPlayerMinionSelected?.Invoke(hit.collider.transform.root.gameObject);
             }
             if (hit.collider.gameObject.CompareTag("Ground"))

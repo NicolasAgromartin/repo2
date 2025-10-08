@@ -24,15 +24,11 @@ public class PauseManager : Singleton<PauseManager>
     {
         InputManager.OnPauseButtonPressed += ToggleGamePause;
         pauseScreen.OnButtonPressed_ResumeGame += ToggleGamePause;
-        
-        //player.OnLifeLost += ToggleGamePause;
     }
     private void OnDisable()
     {
         InputManager.OnPauseButtonPressed -= ToggleGamePause;
         pauseScreen.OnButtonPressed_ResumeGame -= ToggleGamePause;
-
-        //player.OnLifeLost -= ToggleGamePause;
     }
     private void OnDestroy()
     {

@@ -6,10 +6,11 @@ using UnityEngine;
 public class Inventory
 {
     public event Action<ItemType> OnItemListChanged;
+    public static event Action<Dictionary<ItemType, List<Item>>> OnItemsUpdated;
 
+    public static Dictionary<ItemType, List<Item>> items { get; private set; }
 
-    private Dictionary<ItemType, List<Item>> items;
-
+    
 
     public Inventory()
     {
@@ -25,14 +26,19 @@ public class Inventory
 
     public void AddItem(Item item)
     {
-        //Debug.Log($"Aded {item.Type} to the list");
         items[item.Type].Add(item);
         OnItemListChanged?.Invoke(item.Type);
+
+        //Debug.Log($"Aded {item.Type} to the list, the list now contains {items[item.Type].Count}");
+
+        OnItemsUpdated?.Invoke(items);
     }
-    public void RemoveItem(ItemType type, Item item)
+    private void RemoveItem(ItemType type, Item item)
     {
         items[item.Type].Remove(item);
         OnItemListChanged?.Invoke(item.Type);
+        
+        OnItemsUpdated?.Invoke(items);
     }
     public void RemoveItemByType(ItemType type)
     {
@@ -40,6 +46,8 @@ public class Inventory
         {
             items[type].RemoveAt(0);
             OnItemListChanged?.Invoke(type);
+            
+            OnItemsUpdated?.Invoke(items);
         }
         else
         {

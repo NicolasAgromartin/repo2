@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using UnityEngine;
+
+
 
 public class TargetsDetector : MonoBehaviour
 {
@@ -49,23 +50,43 @@ public class TargetsDetector : MonoBehaviour
 
 
 
+    //private void SuscribeToTarget(GameObject target)
+    //{
+    //    PlayerMinion playerMinion = target.GetComponent<PlayerMinion>();
+    //    Player player = target.GetComponent<Player>();
+
+    //    if (playerMinion != null)
+    //    {
+    //        playerMinion.OnDeath += RemoveMissingTarget;
+    //    }
+    //}
+    //private void UnsuscribeToTarget(GameObject target)
+    //{
+    //    PlayerMinion playerMinion = target.GetComponent<PlayerMinion>();
+    //    Player player = target.GetComponent<Player>();
+
+    //    if (playerMinion != null)
+    //    {
+    //        playerMinion.OnDeath -= RemoveMissingTarget;
+    //    }
+    //    if(player != null)
+    //    {
+    //        player.OnDeath -= RemoveMissingTarget;
+    //    }
+    //}
     private void SuscribeToTarget(GameObject target)
     {
-        PlayerMinion playerMinion = target.GetComponent<PlayerMinion>();
-        if (playerMinion != null)
-        {
-            playerMinion.OnDeath += RemoveMissingTarget;
-        }
+        Unit unit = target.GetComponent<Unit>();
+
+        if (unit != null) unit.OnDeath += RemoveMissingTarget;
     }
     private void UnsuscribeToTarget(GameObject target)
     {
-        PlayerMinion playerMinion = target.GetComponent<PlayerMinion>();
-        if (playerMinion != null)
-        {
-            playerMinion.OnDeath -= RemoveMissingTarget;
-        }
-    }
+        Unit unit = target.GetComponent<Unit>();
 
+        if (unit != null) unit.OnDeath -= RemoveMissingTarget;
+
+    }
     private void RemoveMissingTarget(Unit target)
     {
         targetsList.Remove(target.gameObject);

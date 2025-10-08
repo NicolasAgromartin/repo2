@@ -1,127 +1,122 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections;
 using UnityEngine;
 
 
 
+// tematica oscura
+// acompañante
+// cartas
 
+
+
+[RequireComponent(typeof(CharacterController))]
 public class Player : Unit
 {
-    #region Events
-    public event Action<List<PlayerMinion>> OnMinionsUpdated;
-    public event Action<int> OnHealthChanged;
-    public event Action<int> OnLivesChanged;
-    public event Action OnDamageRecieved;
-    public event Action OnLifeLost;
-    public event Action OnPlayerLost;
-    #endregion
+    public static event Action OnPlayerRestored;
+    public static event Action OnPlayerLost;
+
+    public int Lives { get; private set; } = 3;
+    
+
+    public PlayerContext PlayerContext { get; private set; }
+    public PlayerStateMachine StateMachine { get; private set; }
 
 
-
-    #region Components
-    private Necromancy necromancy;
+    private Animator animator;
     private Inventory inventory;
-    private List<PlayerMinion> minions = new();
-    private RespawnManager respawnManager;
-    #endregion
+    private Necromancy necromancy;
+    private MinionOwner minionOwner;
+    private EnemyDetector enemyDetector;
+    private CharacterController characterController;
+    private AttackPerformer attackPerformer;
+    
+
+
+
+
 
 
 
     #region Life Cykle
     private void Awake()
     {
+        Stats = new(100, 10, 6f, 2f);
+
         necromancy = GetComponent<Necromancy>();
-        Stats = SaveSystem.LoadPlayerUnitStats();
+        minionOwner = GetComponent<MinionOwner>();
+        animator = GetComponentInChildren<Animator>();
+        enemyDetector = GetComponentInChildren<EnemyDetector>();
+        characterController = GetComponent<CharacterController>();
+        attackPerformer = GetComponentInChildren<AttackPerformer>();
         InitiateInventory();
-    }
-    private void Start()
-    {
-        OnHealthChanged?.Invoke(Stats.CurrentHealth);
-        OnLivesChanged?.Invoke(lives);
-        UpdateMinionsList();
+
+
+        PlayerContext = new(characterController, animator, transform, inventory, necromancy, enemyDetector, minionOwner, attackPerformer, Stats);
+        StateMachine = new(PlayerContext);
     }
     private void OnEnable()
     {
-        necromancy.OnUnitSummoned += AddMinion;
-        necromancy.OnUnitResurrected += AddMinion;
-        necromancy.OnUnitDefleshed += AddMinion;
+        StateMachine.OnEnable();
 
         RespawnManager.OnPlayerRespawned += RestorePlayer;
     }
     private void OnDisable()
     {
-        necromancy.OnUnitSummoned -= AddMinion;
-        necromancy.OnUnitResurrected -= AddMinion;
-        necromancy.OnUnitDefleshed -= AddMinion;
+        StateMachine.OnDisable();
 
         RespawnManager.OnPlayerRespawned -= RestorePlayer;
     }
+    private void Start()
+    {
+        StateMachine.Start();
+    }
+    private void Update()
+    {
+        StateMachine.Update();
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        StateMachine.OnTriggerEnter(other);
+    }
     #endregion
+
+
+
 
 
 
     #region Health & Life
-    private int lives = 3;
     override public void RecieveDamage(int damage)
     {
-        base.RecieveDamage(damage);
-
-        OnDamageRecieved?.Invoke();
-        OnHealthChanged?.Invoke(Stats.CurrentHealth);
-
-        if (Stats.CurrentHealth <= 0)
+        if (Stats.CurrentHealth - damage <= 0)
         {
             tag = "Untagged";
-            lives--;
+            Lives--;
+        }
 
-            if (lives <= 0)
-            {
-                Debug.Log("Player died");
-                // fin de juego
-                OnPlayerLost?.Invoke();
-                return;    
-            }
+        base.RecieveDamage(damage);
 
-            OnLifeLost?.Invoke();
-            OnLivesChanged?.Invoke(lives);
+        if (Lives <= 0)
+        {
+            OnPlayerLost?.Invoke();
         }
     }
-    override public void IncreaseHealth(int health)
-    {
-        base.IncreaseHealth(health);
-        OnHealthChanged?.Invoke(Stats.CurrentHealth);
-    }
-
     private void RestorePlayer()
     {
+        IncreaseHealth(Stats.MaxHealth);
         tag = "Player";
-        Stats.CurrentHealth = 0;
-        IncreaseHealth(80);
+
+        StartCoroutine(SimulateRestoreTime());
+    }
+    private IEnumerator SimulateRestoreTime()
+    {
+        yield return new WaitForSecondsRealtime(1f);
+        OnPlayerRestored?.Invoke();
     }
     #endregion
 
 
-
-
-
-    #region Minions
-    private void UpdateMinionsList()
-    {
-        minions = FindObjectsByType<PlayerMinion>(sortMode: FindObjectsSortMode.None).ToList();
-        OnMinionsUpdated?.Invoke(minions);
-    }
-    private void AddMinion(GameObject newMinion)
-    {
-        minions.Add(newMinion.GetComponent<PlayerMinion>());
-        OnMinionsUpdated.Invoke(minions);
-    }
-    private void RemoveMinion(GameObject deadMinion)
-    {
-        minions.Remove(deadMinion.GetComponent<PlayerMinion>());
-        OnMinionsUpdated?.Invoke(minions);
-    }
-    #endregion
 
 
 
@@ -132,11 +127,9 @@ public class Player : Unit
     public void InitiateInventory()
     {
         inventory = new();
-        FindAnyObjectByType<InventoryCanvas>(FindObjectsInactive.Include).SetInventory(inventory);
-        GetComponent<PlayerStateMachine>().SetInventory(inventory);
         necromancy.SetInventory(inventory);
     }
-    public Inventory GetInventory() => this.inventory;
+    public Inventory GetInventory() => inventory;
     public Item UseKey()
     {
         return inventory.GetKey();

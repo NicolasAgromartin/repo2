@@ -22,7 +22,9 @@ public enum TransitionEvent
     RecieveDamage,
     End,
     Die,
+    Respawn,
 }
+
 public enum FiendType
 {
     Skeleton,

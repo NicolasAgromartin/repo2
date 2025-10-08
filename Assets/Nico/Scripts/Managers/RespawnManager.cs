@@ -12,74 +12,24 @@ public class RespawnManager : Singleton<RespawnManager>
     public static event Action OnPlayerRespawned;
     
 
-    [Header("Respawn Points")]
-    [SerializeField] private List<GameObject> respawnPoints;
-    private GameObject closestRespawnPoint;
-    
     private Player player;
-
-
-    [SerializeField] private GameObject blackScreen;
-    [SerializeField] private GameObject deathScreen;
-
-
-
-    #region Life Cykle
-    new private void Awake()
-    {
-        base.Awake();
-        player = FindAnyObjectByType<Player>();
-    }
-    private void OnEnable()
-    {
-        player.OnLifeLost += OpenDeathScreen;
-    }
-    private void OnDisable()
-    {
-        player.OnLifeLost -= OpenDeathScreen;
-    }
-    #endregion
-
-
-
-    private void OpenDeathScreen()
-    {
-        blackScreen.SetActive(true);
-        deathScreen.SetActive(true);
-
-        CursorManager.EnableCursor();
-        Time.timeScale = 0f;
-
-        SetButtonsEvents();
-    }
+    private GameObject closestRespawnPoint;
+    private readonly List<GameObject> respawnPoints = new();
     
-    private void SetButtonsEvents()
+
+    private void Start()
     {
-        Button tryAgainButton = deathScreen.transform.Find("ButtonContainer/TryAgainButton").gameObject.GetComponent<Button>();
-        Button mainMenuButton = deathScreen.transform.Find("ButtonContainer/MainMenuButton").gameObject.GetComponent<Button>();
-        Button exitButton = deathScreen.transform.Find("ButtonContainer/ExitButton").gameObject.GetComponent<Button>();
-
-
-        tryAgainButton.onClick.AddListener(() =>
+        foreach (Transform point in transform)
         {
-            RespawnPlayer();
-            tryAgainButton.onClick.RemoveAllListeners();
-        });
+            respawnPoints.Add(point.gameObject);
+        }
+        player = FindAnyObjectByType<Player>(); 
 
-        mainMenuButton.onClick.AddListener(() =>
-        {
-            SceneLoader.Instance.GoToTitleScreen();
-            tryAgainButton.onClick.RemoveAllListeners();
-        });
-
-        exitButton.onClick.AddListener(() =>
-        {
-            SceneLoader.Instance.ExitGame();
-            tryAgainButton.onClick.RemoveAllListeners();
-        });
     }
 
-    private void RespawnPlayer()
+
+
+    public void RespawnPlayer()
     {
         closestRespawnPoint = respawnPoints[0];
 
@@ -98,9 +48,6 @@ public class RespawnManager : Singleton<RespawnManager>
         player.transform.position = closestRespawnPoint.transform.position;
 
         OnPlayerRespawned?.Invoke();
-
-        blackScreen.SetActive(false);
-        deathScreen.SetActive(false);
 
         CursorManager.DisableCursor();
         Time.timeScale = 1f;

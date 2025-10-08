@@ -5,58 +5,38 @@ using UnityEngine;
 public class PlayerHurtState : BaseState
 {
     public override event Action<TransitionEvent> OnEventOccurred;
-    public PlayerHurtState(PlayerStateMachine stateMachine) : base(stateMachine)
-    {
-        this.stateMachine = stateMachine;
-        animator = stateMachine.Animator;
-    }
+    public PlayerHurtState(PlayerStateMachine stateMachine) : base(stateMachine) { }
 
 
-    private readonly PlayerStateMachine stateMachine;
-    private readonly Animator animator;
+
 
     public override void EnterState()
     {
+        attackPerformer.OnHurtEnded += HandleEndAnimation;
         animator.SetTrigger("DamageRecieved");
-        stateMachine.StartCoroutine(RunHurtAnimation());
-
-        
+        //transform.GetComponent<Player>().StartCoroutine(RunHurtAnimation());
     }
-    public override void ExitState()
+    public override void ExitState() 
     {
-        
+        attackPerformer.OnHurtEnded -= HandleEndAnimation;
     }
-    public override void UpdateState()
+    public override void UpdateState() { }
+
+
+
+
+
+    private void HandleEndAnimation()
     {
+        if(stats.CurrentHealth <= 0)
+        {
+            OnEventOccurred?.Invoke(TransitionEvent.Die);
+        }
+        else
+        {
+            animator.SetBool("Death", false);
+            OnEventOccurred?.Invoke(TransitionEvent.End);
+        }
     }
 
-
-    private IEnumerator RunHurtAnimation()
-    {
-        yield return new WaitForSeconds(animator.GetCurrentAnimatorClipInfo(0).Length / 2);
-        OnEventOccurred?.Invoke(TransitionEvent.End);
-    }
-
-
-
-
-
-    #region Collisions
-    public override void OnCollisionEnter(Collider other)
-    {
-        throw new NotImplementedException();
-    }
-    public override void OnCollisionExit(Collider other)
-    {
-        throw new NotImplementedException();
-    }
-    public override void OnTriggerEnter(Collider other)
-    {
-        throw new NotImplementedException();
-    }
-    public override void OnTriggerExit(Collider other)
-    {
-        throw new NotImplementedException();
-    }
-    #endregion
 }

@@ -1,45 +1,44 @@
+using System;
 using System.Collections.Generic;
-using TMPro;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 using UnityEngine;
 
-public class PlayerStateMachine : BaseStateMachine
+
+
+
+public class PlayerStateMachine
 {
+    public static event Action<BaseState> OnStateChange;
 
-    [Header("Components")]
-    [SerializeField] private CharacterController characterController;
-    [SerializeField] private CameraController cameraController;
-    [SerializeField] private EnemyDetector enemyDetector;
-    [SerializeField] private PlayerCanvas playerCanvas;
-    [SerializeField] private NecromancyScreen remainsCanvas;
-    [SerializeField] private Necromancy necromancy;
-    [SerializeField] private AudioSource stepsClip;
-    [SerializeField] private Player player;
+    public PlayerContext PlayerContext { get; private set; }
 
-    private Inventory inventory;
-
-    [Header("UI")]
-    [SerializeField] private TMP_Text stateIndicator;
 
 
 
 
 
     #region States
-    protected PlayerIdleState idleState;
-    protected PlayerMovementState movementState;
-    protected PlayerCombatState combatState;
-    protected PlayerHurtState hurtState;
-    protected PlayerDeadState deadState;
-    private PlayerInteractState interactState;
+    public static BaseState CurrentState { get; private set; }
+
+    private PlayerIdleState idleState;
+    private PlayerHurtState hurtState;
+    private PlayerDeadState deadState;
+    private PlayerCombatState combatState;
     private PlayerTacticsState tacticsState;
+    private PlayerInteractState interactState;
+    private PlayerMovementState movementState;
+
+    private readonly Dictionary<(BaseState, TransitionEvent), BaseState> eventMap = new();
     #endregion
 
 
 
 
     #region Life Cykle
-    private void Awake()
+    public PlayerStateMachine(PlayerContext playerContext)
     {
+        PlayerContext = playerContext;
+
         idleState = new(this);
         movementState = new(this);
         combatState = new(this);
@@ -50,40 +49,32 @@ public class PlayerStateMachine : BaseStateMachine
 
         GenerateEventMap();
     }
-    private void OnEnable()
+    public void OnEnable()
     {
         SubscribeStateEvents();
-        InputManager.OnSwarmTargetButtonPressed += SwarmEnemy;
-        InputManager.OnUsePotionButtonPressed += UsePotion;
-
-        player.OnDamageRecieved += RecieveDamage;
     }
-    private void OnDisable()
+    public void OnDisable()
     {
         UnsubscribeStateEvents();
-
-        InputManager.OnSwarmTargetButtonPressed -= SwarmEnemy;
-        InputManager.OnUsePotionButtonPressed -= UsePotion;
-
-        player.OnDamageRecieved -= RecieveDamage;
-        
-    }
-    private void OnDestroy()
-    {
         CurrentState.ExitState();
     }
-    private void Start()
+    public void Start()
     {
         CurrentState = idleState;
         CurrentState.EnterState();
-        stateIndicator.text = CurrentState.ToString();
     }
-    private void Update()
-    {
-    }
-    private void FixedUpdate()
+    public void Update()
     {
         CurrentState.UpdateState();
+        if (PlayerContext.Stats.CurrentHealth <= 0)
+        {
+            PlayerContext.Animator.SetBool("Death", true);
+            ChangeState(deadState);
+        }
+    }
+    public void OnTriggerEnter(Collider other)
+    {
+        CurrentState.OnTriggerEnter(other);
     }
     #endregion
 
@@ -96,36 +87,39 @@ public class PlayerStateMachine : BaseStateMachine
     #region State Events
     private void GenerateEventMap()
     {
-        // IdleState es el estado por defecto, por lo que no tiene un fin
-        // todas las salidas de este estado se determinan por un evento activo
+        // IdleState
         eventMap.Add((idleState, TransitionEvent.Move), movementState);
         eventMap.Add((idleState, TransitionEvent.Attack), combatState);
         eventMap.Add((idleState, TransitionEvent.Interact), interactState);
         eventMap.Add((idleState, TransitionEvent.RecieveDamage), hurtState);
         eventMap.Add((idleState, TransitionEvent.Tactics), tacticsState);
+        eventMap.Add((idleState, TransitionEvent.Die), deadState);
 
-        // MoveState transiciones
+        // MoveState
         eventMap.Add((movementState, TransitionEvent.RecieveDamage), hurtState);
+        eventMap.Add((movementState, TransitionEvent.Attack), combatState);
         eventMap.Add((movementState, TransitionEvent.End), idleState); // deja de recibir inputs de movimiento
 
-        // AttackState transiciones
+        // AttackState
         eventMap.Add((combatState, TransitionEvent.RecieveDamage), hurtState);
         eventMap.Add((combatState, TransitionEvent.End), idleState); // finaliza la cadena de ataques
+        eventMap.Add((combatState, TransitionEvent.Die), deadState);
 
-        // InteractState transiciones
+        // InteractState
         eventMap.Add((interactState, TransitionEvent.End), idleState); // finaliza el estado de interaccion
         eventMap.Add((interactState, TransitionEvent.RecieveDamage), hurtState);
 
 
-        // TacticsState transitions
+        // TacticsState
         eventMap.Add((tacticsState, TransitionEvent.Tactics), idleState); // exit tactics mode
         eventMap.Add((tacticsState, TransitionEvent.RecieveDamage), hurtState);
 
-        // HurtState transiciones
+        // HurtState
         eventMap.Add((hurtState, TransitionEvent.Die), deadState); // si recibo daño y me muero
         eventMap.Add((hurtState, TransitionEvent.End), idleState); // si dejo de recibir daño pero sigo vivo
-            
-        // DeadState no tiene transiciones
+
+        // DeadState
+        eventMap.Add((deadState, TransitionEvent.Respawn), idleState);
     }
     private void SubscribeStateEvents()
     {
@@ -153,7 +147,16 @@ public class PlayerStateMachine : BaseStateMachine
         {
             ChangeState(nextState);
         }
-        stateIndicator.text = CurrentState.ToString();
+    }
+    protected internal void ChangeState(BaseState nextState)
+    {
+        if (CurrentState == nextState) return;
+
+        CurrentState.ExitState();
+        CurrentState = nextState;
+        CurrentState.EnterState();
+
+        OnStateChange?.Invoke(CurrentState);
     }
     #endregion
 
@@ -161,57 +164,10 @@ public class PlayerStateMachine : BaseStateMachine
 
 
 
-    #region Getters
-    public CharacterController CharacterController => characterController;
-    public CameraController CameraController => cameraController;
-    public Transform CharacterModel => model;
-    public Animator Animator => animator;
-    public EnemyDetector EnemyDetector => enemyDetector;
-    public NecromancyScreen RemainsCanvas => remainsCanvas;
-    public PlayerCanvas PlayerCanvas => playerCanvas;
-    public Necromancy Necromancy => necromancy;
-    public Inventory Inventory => inventory;
-    public AudioSource StepsClip => stepsClip;
-    #endregion
-
-    #region Setters
-    public void SetInventory(Inventory inventory) => this.inventory = inventory;
-    #endregion
 
 
 
 
-    private void RecieveDamage()
-    {
-        TriggerEventTransition(TransitionEvent.RecieveDamage);
-    }
-    private void SwarmEnemy()
-    {
-        //Debug.Log("swarming", TacticsSystem.SelectedEnemy);
-        //Debug.Log("swarming: " + (TacticsSystem.SelectedEnemy != null ? TacticsSystem.SelectedEnemy.name : "null"));
-
-        if (CurrentState == deadState || CurrentState == interactState) return;
-
-        TacticsSystem.SwarmEnemy(TacticsSystem.SelectedEnemy);
-    }
-    private void UsePotion()
-    {
-        if(player.Stats.CurrentHealth == 100) { Debug.Log("Max health! "); return; }
-
-        if (CurrentState == deadState || CurrentState == interactState) return;
-
-
-        List<Item> potions = inventory.GetItems(ItemType.Potion);
-        if (potions.Count > 0)
-        {
-            potions[0].Use(gameObject.GetComponent<Player>());
-            inventory.RemoveItem(ItemType.Potion, potions[0]);
-        }
-        else
-        {
-            Debug.Log("No more potions to use");
-        }
-    }
 }
 
 

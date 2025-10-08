@@ -1,48 +1,94 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 
 
-
+[RequireComponent(typeof(SphereCollider))]
 public class EnemyDetector : MonoBehaviour
 {
-    [SerializeField] private List<GameObject> enemiesNearby = new();
-    //[SerializeField] private float enemyDetectionRadius = 10f;
-
+    public static event Action<GameObject> OnTargetChanged;
+    public static bool EnemyInRange { get; private set; } = false;
+    public GameObject SelectedTarget { get; private set; } = null;
+    private readonly List<GameObject> enemiesNearby = new();
+    private readonly float detectionRadius = 10f;
     private int lastIndexedTarget = 0;
-    private GameObject root;
+    private GameObject detected;
+
+
+    #region Life Cycle
+    private void Awake()
+    {
+        GetComponent<SphereCollider>().radius = detectionRadius;
+    }
+    private void OnEnable()
+    {
+        InputManager.OnSwitchTargetButtonPressed += ChangeFocusedTarget;
+    }
+    private void OnDisable()
+    {
+        InputManager.OnSwitchTargetButtonPressed -= ChangeFocusedTarget;
+    }
+    #endregion
 
 
 
-
-
-
+    #region Collision Trigger
     private void OnTriggerEnter(Collider other)
     {
-        root = other.transform.root.gameObject;
+        detected = other.transform.root.gameObject;
 
-        if (!root.CompareTag("Enemy") || enemiesNearby.Contains(root)) return; 
-        // si el gameObject no tiene el tag enemigo o si ya esta en la lista
+        if (!detected.CompareTag("Enemy") || enemiesNearby.Contains(detected)) return; 
 
-        enemiesNearby.Add(root);
-        root.GetComponent<Unit>().OnDeath += RemoveFromList;
+        enemiesNearby.Add(detected);
+
+        EnemyInRange = true;
+
+        if(SelectedTarget == null)
+        {
+            SelectedTarget = detected;
+            OnTargetChanged?.Invoke(SelectedTarget);
+        }
+
+        detected.GetComponent<Unit>().OnDeath += RemoveFromList;
     }
     private void OnTriggerExit(Collider other)
     {
-        root = other.transform.root.gameObject;
+        detected = other.transform.root.gameObject;
 
-        if (!root.CompareTag("Enemy") || !enemiesNearby.Contains(root)) return;
+        if (!detected.CompareTag("Enemy") || !enemiesNearby.Contains(detected)) return;
 
-        enemiesNearby.Remove(root);
-        root.GetComponent<Unit>().OnDeath -= RemoveFromList;
+        enemiesNearby.Remove(detected);
 
-        if (TacticsSystem.SelectedEnemy == root.gameObject) TacticsSystem.UnselectEnemy();
+        if(enemiesNearby.Count == 0)
+        {
+            EnemyInRange = false;
+            SelectedTarget = null;
+        }
+        else if (detected == SelectedTarget)
+        {
+            SelectedTarget = enemiesNearby[0];
+        }
+
+        detected.GetComponent<Unit>().OnDeath -= RemoveFromList;
+
+        OnTargetChanged?.Invoke(SelectedTarget);
     }
+    #endregion
 
 
-    public void ChangeFocusedTarget()
+
+
+
+
+
+    private void ChangeFocusedTarget()
     {
-        if (enemiesNearby.Count == 0) return;
+        if (enemiesNearby.Count == 0)
+        {
+            OnTargetChanged?.Invoke(null);
+            return;
+        }
 
         foreach(GameObject enemy in enemiesNearby) // pasarlo a un while
         {
@@ -57,15 +103,20 @@ public class EnemyDetector : MonoBehaviour
             lastIndexedTarget = 0;
         }
 
-        TacticsSystem.SelectEnemy(enemiesNearby[lastIndexedTarget]);
+        SelectedTarget = enemiesNearby[lastIndexedTarget];
+        OnTargetChanged?.Invoke(SelectedTarget);
     }
-
-
-
     private void RemoveFromList(Unit enemy)
     {
-        enemy.GetComponent<Enemy>().OnDeath -= RemoveFromList;
+        enemy.GetComponent<Unit>().OnDeath -= RemoveFromList;
         enemiesNearby.Remove(enemy.gameObject);
-        TacticsSystem.UnselectEnemy();
     }
+
+
+
+
+
+
+
+
 }

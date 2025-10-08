@@ -3,34 +3,40 @@ using UnityEngine;
 
 public class PlayerDeadState : BaseState
 {
-    public PlayerDeadState(BaseStateMachine stateMachine) : base(stateMachine)
-    {
-    }
-
     public override event Action<TransitionEvent> OnEventOccurred;
 
 
+    public PlayerDeadState(PlayerStateMachine stateMachine) : base(stateMachine)
+    {
+    }
 
-    public override void EnterState() { }
 
-    public override void ExitState() { OnEventOccurred?.Invoke(TransitionEvent.End); }
+
+
+    public override void EnterState() 
+    {
+        Time.timeScale = 1f;
+        animator.SetBool("Death", true);
+        RespawnManager.OnPlayerRespawned += HandleRespawn;
+        //BlackScreen.OnBlackScreenVisible += HandleRespawn;
+    }
+
+    public override void ExitState() 
+    {
+        RespawnManager.OnPlayerRespawned -= HandleRespawn;
+        //BlackScreen.OnBlackScreenVisible -= HandleRespawn;
+    }
 
     public override void UpdateState() { }
 
 
 
 
-
-    public override void OnCollisionEnter(Collider other) { }
-    public override void OnCollisionExit(Collider other) { }
-
-    public override void OnTriggerEnter(Collider other)
+    private void HandleRespawn()
     {
-        throw new NotImplementedException();
-    }
+        animator.SetBool("Death", false);
+        animator.Play("Movement", 0, 0f);
 
-    public override void OnTriggerExit(Collider other)
-    {
-        throw new NotImplementedException();
+        OnEventOccurred?.Invoke(TransitionEvent.Respawn);
     }
 }
