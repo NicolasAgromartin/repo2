@@ -28,11 +28,17 @@ public class PlayerMovementState : BaseState
     {
         InputManager.OnPlayerMovement += SimpleMove;
         InputManager.OnBasicAttackPerformed += Attack;
+        InputManager.OnUsePotionButtonPressed += UsePotion;
+        InputManager.OnInteractAction += Interact;
+
     }
     public override void ExitState()
     {
         InputManager.OnPlayerMovement -= SimpleMove;
         InputManager.OnBasicAttackPerformed -= Attack;
+        InputManager.OnUsePotionButtonPressed -= UsePotion;
+        InputManager.OnInteractAction -= Interact;
+
     }
     public override void UpdateState() 
     {

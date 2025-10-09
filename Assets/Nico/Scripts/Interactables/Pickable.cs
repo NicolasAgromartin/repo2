@@ -27,28 +27,28 @@ public class Pickable : MonoBehaviour, IInteractable
     }
     private void LateUpdate()
     {
-        itemCanvas.transform.LookAt(transform.position + mainCamera.transform.forward);
+        //itemCanvas.transform.LookAt(transform.position + mainCamera.transform.forward);
     }
 
 
 
 
-    #region Collider
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.CompareTag("Player"))
-        {
-            itemCanvas.SetActive(true);
-        }
-    }
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.gameObject.CompareTag("Player"))
-        {
-            itemCanvas.SetActive(false);
-        }
-    }
-    #endregion
+    //#region Collider
+    //private void OnTriggerEnter(Collider other)
+    //{
+    //    if (other.gameObject.CompareTag("Player"))
+    //    {
+    //        itemCanvas.SetActive(true);
+    //    }
+    //}
+    //private void OnTriggerExit(Collider other)
+    //{
+    //    if (other.gameObject.CompareTag("Player"))
+    //    {
+    //        itemCanvas.SetActive(false);
+    //    }
+    //}
+    //#endregion
 
 
 

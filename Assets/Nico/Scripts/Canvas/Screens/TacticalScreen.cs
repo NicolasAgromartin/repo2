@@ -63,7 +63,7 @@ public class TacticalScreen : MonoBehaviour
     public void HideMinionTactics()
     {
         Debug.Log("Button pressed");
-
+        currentSelectedMinion = null;
         RemoveButtonsListener();
 
         minionTacticsUI.SetActive(false);

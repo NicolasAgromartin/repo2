@@ -8,17 +8,17 @@ public class Inventory
     public event Action<ItemType> OnItemListChanged;
     public static event Action<Dictionary<ItemType, List<Item>>> OnItemsUpdated;
 
-    public static Dictionary<ItemType, List<Item>> items { get; private set; }
+    public static Dictionary<ItemType, List<Item>> Items { get; private set; }
 
     
 
     public Inventory()
     {
-        items = new();
+        Items = new();
 
         foreach(ItemType type in Enum.GetValues(typeof(ItemType)))
         {
-            items.Add(type, new());
+            Items.Add(type, new());
         }
     }
 
@@ -26,41 +26,39 @@ public class Inventory
 
     public void AddItem(Item item)
     {
-        items[item.Type].Add(item);
+        Items[item.Type].Add(item);
         OnItemListChanged?.Invoke(item.Type);
 
-        //Debug.Log($"Aded {item.Type} to the list, the list now contains {items[item.Type].Count}");
-
-        OnItemsUpdated?.Invoke(items);
+        OnItemsUpdated?.Invoke(Items);
     }
-    private void RemoveItem(ItemType type, Item item)
+    public void RemoveItem(ItemType type, Item item)
     {
-        items[item.Type].Remove(item);
+        Items[item.Type].Remove(item);
         OnItemListChanged?.Invoke(item.Type);
         
-        OnItemsUpdated?.Invoke(items);
+        OnItemsUpdated?.Invoke(Items);
     }
     public void RemoveItemByType(ItemType type)
     {
-        if (items[type].Count > 0)
+        if (Items[type].Count > 0)
         {
-            items[type].RemoveAt(0);
+            Items[type].RemoveAt(0);
             OnItemListChanged?.Invoke(type);
             
-            OnItemsUpdated?.Invoke(items);
+            OnItemsUpdated?.Invoke(Items);
         }
         else
         {
             Debug.Log($"There aint no more items to remove of the type {type}");
         }
     }
-    public List<Item> GetItems(ItemType type) => items[type];
-    public Dictionary<ItemType, List<Item>> GetAllItems() => items;
+    public static List<Item> GetItems(ItemType type) => Items[type];
+    public Dictionary<ItemType, List<Item>> GetAllItems() => Items;
     public Item GetKey()
     {
-        if (items[ItemType.KeyItem].Count  > 0)
+        if (Items[ItemType.KeyItem].Count  > 0)
         {
-            Item keyToReturn = items[ItemType.KeyItem][0];
+            Item keyToReturn = Items[ItemType.KeyItem][0];
             RemoveItem(ItemType.KeyItem, keyToReturn);
             return keyToReturn;
         }
@@ -69,4 +67,8 @@ public class Inventory
             return null;
         }
     }
+
+
+
+
 }

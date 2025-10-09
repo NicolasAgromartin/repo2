@@ -60,12 +60,14 @@ public class Player : Unit
         StateMachine.OnEnable();
 
         RespawnManager.OnPlayerRespawned += RestorePlayer;
+        BlackScreen.OnBlackScreenVisible += CheckLives;
     }
     private void OnDisable()
     {
         StateMachine.OnDisable();
 
         RespawnManager.OnPlayerRespawned -= RestorePlayer;
+        BlackScreen.OnBlackScreenVisible -= CheckLives;
     }
     private void Start()
     {
@@ -96,11 +98,6 @@ public class Player : Unit
         }
 
         base.RecieveDamage(damage);
-
-        if (Lives <= 0)
-        {
-            OnPlayerLost?.Invoke();
-        }
     }
     private void RestorePlayer()
     {
@@ -108,6 +105,13 @@ public class Player : Unit
         tag = "Player";
 
         StartCoroutine(SimulateRestoreTime());
+    }
+    private void CheckLives()
+    {
+        if (Lives <= 0)
+        {
+            OnPlayerLost?.Invoke();
+        }
     }
     private IEnumerator SimulateRestoreTime()
     {
@@ -137,5 +141,14 @@ public class Player : Unit
     #endregion
 
 
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.yellow;
+
+        //Gizmos.DrawWireSphere(transform.position + new Vector3(0f,1f,.8f), 1f);
+
+        Gizmos.DrawWireCube(transform.position + new Vector3(0f, 1f, .5f), new Vector3(1f,2.5f,1f));
+    }
 
 }

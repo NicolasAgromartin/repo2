@@ -28,12 +28,14 @@ public class DefeatScreen : MonoBehaviour
 
 
 
-
     private void ShowButtons()
     {
-        defeatMessage.SetActive(true);
-        buttonsContainer.SetActive(true);
-        CursorManager.EnableCursor();
+        if (FindAnyObjectByType<Player>().Lives > 0)
+        {
+            defeatMessage.SetActive(true);
+            buttonsContainer.SetActive(true);
+            CursorManager.EnableCursor();
+        }
     }
     private void HideButtons()
     {

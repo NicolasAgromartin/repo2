@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 
@@ -7,7 +9,7 @@ using UnityEngine;
 
 public abstract class BaseState
 {
-    public abstract event Action<TransitionEvent> OnEventOccurred;
+    public virtual event Action<TransitionEvent> OnEventOccurred;
 
     protected PlayerStateMachine stateMachine;
     protected PlayerContext playerContext;
@@ -22,6 +24,9 @@ public abstract class BaseState
     protected EnemyDetector enemyDetector;
     protected AttackPerformer attackPerformer;
     protected CharacterController characterController;
+
+    protected GameObject detected;
+
 
 
     public BaseState(PlayerStateMachine stateMachine) 
@@ -52,8 +57,36 @@ public abstract class BaseState
 
     protected void UsePotion()
     {
+        if (stats.CurrentHealth == stats.MaxHealth) return;
 
+        List<Item> potions = Inventory.GetItems(ItemType.Potion);
+        if (potions.Count > 0)
+        {
+            potions[0].Use(transform.GetComponent<Player>());
+            inventory.RemoveItem(ItemType.Potion, potions[0]);
+        }
     }
+    
+    protected void Interact()
+    {
+        Collider[] colliders = Physics.OverlapBox(transform.position + new Vector3(0f, 1f, .5f), new Vector3(1f, 2.5f, 1f), 
+            Quaternion.identity, LayerMask.GetMask("Interactable"));
+
+        foreach (Collider collider in colliders)
+        {
+            //GameObject detected = collider.transform.root.gameObject;
+            detected = collider.gameObject;
+
+
+            if (detected.GetComponent<IInteractable>() == null) return;
+
+            detected.GetComponent<IInteractable>().Interact(transform.gameObject);
+
+
+
+        }
+    }
+    
 }
 
 

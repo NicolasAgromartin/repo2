@@ -28,7 +28,7 @@ public class AttackPerformer : MonoBehaviour
         parent = transform.root.gameObject;
 
         //Damage = parent.GetComponent<Unit>().Stats.Attack;
-        Damage = 100;
+        Damage = 10;
     }
 
 

@@ -14,17 +14,20 @@ public class PlayerIdleState : BaseState
     #region Life Cykle
     public override void EnterState()
     {
-        InputManager.OnPlayerMovement += MovePlayer;
         InputManager.OnInteractAction += Interact;
+        InputManager.OnPlayerMovement += MovePlayer;
         InputManager.OnBasicAttackPerformed += Attack;
+        InputManager.OnUsePotionButtonPressed += UsePotion;
         InputManager.OnTacticalButtonPressed += EnterTacticalMode;
     }
     public override void ExitState()
     {
-        InputManager.OnPlayerMovement -= MovePlayer;
         InputManager.OnInteractAction -= Interact;
+        InputManager.OnPlayerMovement -= MovePlayer;
         InputManager.OnBasicAttackPerformed -= Attack;
+        InputManager.OnUsePotionButtonPressed -= UsePotion;
         InputManager.OnTacticalButtonPressed -= EnterTacticalMode;
+
     }
     public override void UpdateState() 
     {
@@ -53,23 +56,7 @@ public class PlayerIdleState : BaseState
             OnEventOccurred?.Invoke(TransitionEvent.Move);
         }   
     }
-    private void Interact()
-    {
-        Collider[] colliders = Physics.OverlapSphere(transform.position, 1f, LayerMask.GetMask("Interactable"));
 
-        foreach (Collider collider in colliders)
-        {
-            GameObject detected = collider.transform.root.gameObject;
-
-            if (detected.GetComponent<IInteractable>() == null) return;
-
-            if (detected.CompareTag("Remains")) OnEventOccurred?.Invoke(TransitionEvent.Interact);
-            else
-            {
-                detected.GetComponent<IInteractable>().Interact(transform.gameObject);
-            }
-        }
-    }
     private void Attack() => OnEventOccurred?.Invoke(TransitionEvent.Attack);
     private void EnterTacticalMode() => OnEventOccurred?.Invoke(TransitionEvent.Tactics);
 
@@ -88,6 +75,16 @@ public class PlayerIdleState : BaseState
         {
             velocity += defaultGravity * gravityMultiplier * Time.deltaTime;
             characterController.Move(Vector3.up * velocity * Time.deltaTime);
+        }
+    }
+
+    new private void Interact()
+    {
+        base.Interact();
+
+        if (detected.CompareTag("Remains"))
+        {
+            OnEventOccurred?.Invoke(TransitionEvent.Interact);
         }
     }
 }

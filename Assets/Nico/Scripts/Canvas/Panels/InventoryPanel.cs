@@ -25,7 +25,7 @@ public class InventoryPanel : MonoBehaviour
     }
     private void OnEnable()
     {
-        foreach (List<Item> itemsList in Inventory.items.Values)
+        foreach (List<Item> itemsList in Inventory.Items.Values)
         {
             foreach (Item item in itemsList)
             {
